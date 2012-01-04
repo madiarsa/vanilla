@@ -29,7 +29,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.os.SystemClock;
-import android.telephony.TelephonyManager;
 import android.view.KeyEvent;
 
 /**
@@ -48,11 +47,6 @@ public class MediaButtonReceiver extends BroadcastReceiver {
 	 * uninitialized.
 	 */
 	private static int sUseControls = -1;
-	/**
-	 * Whether the phone is currently in a call. 1 for yes, 0 for no, -1 for
-	 * uninitialized.
-	 */
-	private static int sInCall = -1;
 	/**
 	 * Time of the last play/pause click. Used to detect double-clicks.
 	 */
@@ -90,30 +84,6 @@ public class MediaButtonReceiver extends BroadcastReceiver {
 	}
 
 	/**
-	 * Return whether the phone is currently in a call.
-	 *
-	 * @param context A context to use.
-	 */
-	private static boolean isInCall(Context context)
-	{
-		if (sInCall == -1) {
-			TelephonyManager manager = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
-			sInCall = (byte)(manager.getCallState() == TelephonyManager.CALL_STATE_IDLE ? 0 : 1);
-		}
-		return sInCall == 1;
-	}
-
-	/**
-	 * Set the cached value for whether the phone is in a call.
-	 *
-	 * @param value True if in a call, false otherwise.
-	 */
-	public static void setInCall(boolean value)
-	{
-		sInCall = value ? 1 : 0;
-	}
-
-	/**
 	 * Process a media button key press.
 	 *
 	 * @param context A context to use.
@@ -123,7 +93,7 @@ public class MediaButtonReceiver extends BroadcastReceiver {
 	 */
 	public static boolean processKey(Context context, KeyEvent event)
 	{
-		if (event == null || isInCall(context) || !useHeadsetControls(context))
+		if (event == null || !useHeadsetControls(context))
 			return false;
 
 		int action = event.getAction();

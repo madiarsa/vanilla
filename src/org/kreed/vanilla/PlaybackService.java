@@ -56,8 +56,6 @@ import android.os.PowerManager;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
-import android.telephony.PhoneStateListener;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.widget.RemoteViews;
 import android.widget.Toast;
@@ -258,7 +256,6 @@ public final class PlaybackService extends Service
 	SongTimeline mTimeline;
 	private Song mCurrentSong;
 
-	boolean mPlayingBeforeCall;
 	/**
 	 * Stores the saved position in the current song from saved state. Should
 	 * be seeked to when the song is loaded into MediaPlayer. Used only during
@@ -272,7 +269,6 @@ public final class PlaybackService extends Service
 	 */
 	private long mPendingSeekSong;
 	public Receiver mReceiver;
-	public InCallListener mCallListener;
 	private String mErrorMessage;
 	/**
 	 * The volume adjustment set in the volume preference.
@@ -356,10 +352,6 @@ public final class PlaybackService extends Service
 
 		PowerManager powerManager = (PowerManager)getSystemService(POWER_SERVICE);
 		mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "VanillaMusicLock");
-
-		mCallListener = new InCallListener();
-		TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-		telephonyManager.listen(mCallListener, PhoneStateListener.LISTEN_CALL_STATE);
 
 		mReceiver = new Receiver();
 		IntentFilter filter = new IntentFilter();
@@ -962,36 +954,6 @@ public final class PlaybackService extends Service
 			} else if (Intent.ACTION_SCREEN_ON.equals(action)) {
 				userActionTriggered();
 			}
-		}
-	}
-
-	private class InCallListener extends PhoneStateListener {
-		@Override
-		public void onCallStateChanged(int state, String incomingNumber)
-		{
-			switch (state) {
-			case TelephonyManager.CALL_STATE_RINGING:
-			case TelephonyManager.CALL_STATE_OFFHOOK: {
-				MediaButtonReceiver.setInCall(true);
-
-				if (!mPlayingBeforeCall) {
-					synchronized (mStateLock) {
-						if (mPlayingBeforeCall = (mState & FLAG_PLAYING) != 0)
-							unsetFlag(FLAG_PLAYING);
-					}
-				}
-				break;
-			}
-			case TelephonyManager.CALL_STATE_IDLE: {
-				MediaButtonReceiver.setInCall(false);
-
-				if (mPlayingBeforeCall) {
-					setFlag(FLAG_PLAYING);
-					mPlayingBeforeCall = false;
-				}
-				break;
-			}
-		}
 		}
 	}
 
