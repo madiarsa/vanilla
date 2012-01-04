@@ -22,7 +22,9 @@
 
 package org.kreed.vanilla;
 
+import android.app.ActionBar;
 import android.app.AlertDialog;
+import android.app.FragmentTransaction;
 import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -34,7 +36,6 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.PaintDrawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -55,14 +56,12 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.AdapterView;
 import android.widget.HorizontalScrollView;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.viewpagerindicator.TabPageIndicator;
 import java.io.File;
 import java.io.IOException;
 import junit.framework.Assert;
@@ -77,6 +76,7 @@ public class LibraryActivity
 	         , DialogInterface.OnClickListener
 	         , DialogInterface.OnDismissListener
 	         , ViewPager.OnPageChangeListener
+	         , ActionBar.TabListener
 {
 	public static final int ACTION_PLAY = 0;
 	public static final int ACTION_ENQUEUE = 1;
@@ -96,7 +96,6 @@ public class LibraryActivity
 	private View mClearButton;
 
 	private View mActionControls;
-	private View mControls;
 	private TextView mTitle;
 	private TextView mArtist;
 	private ImageView mCover;
@@ -193,9 +192,7 @@ public class LibraryActivity
 				view.setOnCreateContextMenuListener(LibraryActivity.this);
 				view.setDivider(null);
 				view.setFastScrollEnabled(true);
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-					CompatHoneycomb.setFastScrollAlwaysVisible(view, true);
-				}
+				view.setFastScrollAlwaysVisible(true);
 				view.setScrollBarStyle(View.SCROLLBARS_OUTSIDE_INSET);
 
 				view.setAdapter(adapter);
@@ -277,53 +274,35 @@ public class LibraryActivity
 		mViewPager = (ViewPager)findViewById(R.id.pager);
 		mViewPager.setAdapter(mPagerAdapter);
 
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-			CompatHoneycomb.addActionBarTabs(this);
-			mViewPager.setOnPageChangeListener(this);
+		ActionBar ab = getActionBar();
+		ab.addTab(ab.newTab()
+			.setText(R.string.artists)
+			.setTabListener(this));
+		ab.addTab(ab.newTab()
+			.setText(R.string.albums)
+			.setTabListener(this));
+		ab.addTab(ab.newTab()
+			.setText(R.string.songs)
+			.setTabListener(this));
+		ab.addTab(ab.newTab()
+			.setText(R.string.playlists)
+			.setTabListener(this));
+		ab.addTab(ab.newTab()
+			.setText(R.string.genres)
+			.setTabListener(this));
+		ab.addTab(ab.newTab()
+			.setText(R.string.files)
+			.setTabListener(this));
+		ab.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
 
-			View controls = getLayoutInflater().inflate(R.layout.actionbar_controls, null);
-			mTitle = (TextView)controls.findViewById(R.id.title);
-			mArtist = (TextView)controls.findViewById(R.id.artist);
-			mCover = (ImageView)controls.findViewById(R.id.cover);
-			controls.setOnClickListener(this);
-			mActionControls = controls;
-		} else {
-			TabPageIndicator tabs = new TabPageIndicator(this);
-			tabs.setViewPager(mViewPager);
-			tabs.setOnPageChangeListener(this);
+		mViewPager.setOnPageChangeListener(this);
 
-			LinearLayout content = (LinearLayout)findViewById(R.id.content);
-			content.addView(tabs, 0, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-
-			SharedPreferences settings = PlaybackService.getSettings(this);
-			if (settings.getBoolean("controls_in_selector", false)) {
-				getLayoutInflater().inflate(R.layout.library_controls, content, true);
-
-				mControls = findViewById(R.id.controls);
-
-				mTitle = (TextView)mControls.findViewById(R.id.title);
-				mArtist = (TextView)mControls.findViewById(R.id.artist);
-				mCover = (ImageView)mControls.findViewById(R.id.cover);
-				View previous = mControls.findViewById(R.id.previous);
-				mPlayPauseButton = (ImageButton)mControls.findViewById(R.id.play_pause);
-				View next = mControls.findViewById(R.id.next);
-
-				mCover.setOnClickListener(this);
-				previous.setOnClickListener(this);
-				mPlayPauseButton.setOnClickListener(this);
-				next.setOnClickListener(this);
-
-				mShuffleButton = (ImageButton)findViewById(R.id.shuffle);
-				mShuffleButton.setOnClickListener(this);
-				registerForContextMenu(mShuffleButton);
-				mEndButton = (ImageButton)findViewById(R.id.end_action);
-				mEndButton.setOnClickListener(this);
-				registerForContextMenu(mEndButton);
-
-				mEmptyQueue = findViewById(R.id.empty_queue);
-				mEmptyQueue.setOnClickListener(this);
-			}
-		}
+		View controls = getLayoutInflater().inflate(R.layout.actionbar_controls, null);
+		mTitle = (TextView)controls.findViewById(R.id.title);
+		mArtist = (TextView)controls.findViewById(R.id.artist);
+		mCover = (ImageView)controls.findViewById(R.id.cover);
+		controls.setOnClickListener(this);
+		mActionControls = controls;
 
 		getContentResolver().registerContentObserver(MediaStore.Audio.Playlists.EXTERNAL_CONTENT_URI, true, mPlaylistObserver);
 
@@ -336,11 +315,6 @@ public class LibraryActivity
 		super.onStart();
 
 		SharedPreferences settings = PlaybackService.getSettings(this);
-
-		if (settings.getBoolean("controls_in_selector", false) != (mControls != null)) {
-			finish();
-			startActivity(new Intent(this, LibraryActivity.class));
-		}
 		mDefaultAction = Integer.parseInt(settings.getString("default_action_int", "0"));
 		mLastActedId = -2;
 		updateHeaders();
@@ -736,7 +710,7 @@ public class LibraryActivity
 				setSearchBoxVisible(false);
 			else
 				mTextFilter.setText("");
-		} else if (view == mCover || view == mActionControls) {
+		} else if (view == mActionControls) {
 			openPlaybackActivity();
 		} else if (view == mEmptyQueue) {
 			setState(PlaybackService.get(this).setFinishAction(SongTimeline.FINISH_RANDOM));
@@ -1021,17 +995,9 @@ public class LibraryActivity
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu)
 	{
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-			MenuItem controls = menu.add(null);
-			CompatHoneycomb.setActionView(controls, mActionControls);
-			CompatHoneycomb.setShowAsAction(controls, MenuItem.SHOW_AS_ACTION_ALWAYS);
-			MenuItem search = menu.add(0, MENU_SEARCH, 0, R.string.search).setIcon(R.drawable.ic_menu_search);
-			CompatHoneycomb.setShowAsAction(search, MenuItem.SHOW_AS_ACTION_ALWAYS);
-		} else {
-			menu.add(0, MENU_SEARCH, 0, R.string.search).setIcon(R.drawable.ic_menu_search);
-			menu.add(0, MENU_PLAYBACK, 0, R.string.playback_view).setIcon(R.drawable.ic_menu_gallery);
-		}
-		menu.add(0, MENU_SORT, 0, R.string.sort_by).setIcon(R.drawable.ic_menu_sort_alphabetically);
+		menu.add(null).setActionView(mActionControls).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+		menu.add(0, MENU_SEARCH, 0, R.string.search).setIcon(R.drawable.ic_menu_search).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+		menu.add(0, MENU_SORT, 0, R.string.sort_by);
 		return super.onCreateOptionsMenu(menu);
 	}
 
@@ -1241,16 +1207,13 @@ public class LibraryActivity
 	{
 		mSearchBoxVisible = visible;
 		mSearchBox.setVisibility(visible ? View.VISIBLE : View.GONE);
-		if (mControls != null) {
-			mControls.setVisibility(visible || (mState & PlaybackService.FLAG_NO_MEDIA) != 0 ? View.GONE : View.VISIBLE);
-		} else if (mActionControls != null) {
-			// try to hide the bottom action bar
-			ViewParent parent = mActionControls.getParent().getParent();
-			if (parent instanceof ViewGroup) {
-				ViewGroup ab = (ViewGroup)parent;
-				if (ab.getChildCount() == 1) {
-					ab.setVisibility(visible ? View.GONE : View.VISIBLE);
-				}
+
+		// try to hide the bottom action bar
+		ViewParent parent = mActionControls.getParent().getParent();
+		if (parent instanceof ViewGroup) {
+			ViewGroup ab = (ViewGroup)parent;
+			if (ab.getChildCount() == 1) {
+				ab.setVisibility(visible ? View.GONE : View.VISIBLE);
 			}
 		}
 
@@ -1259,45 +1222,21 @@ public class LibraryActivity
 	}
 
 	@Override
-	protected void onStateChange(int state, int toggled)
-	{
-		super.onStateChange(state, toggled);
-
-		if ((toggled & PlaybackService.FLAG_NO_MEDIA) != 0) {
-			// update visibility of controls
-			setSearchBoxVisible(mSearchBoxVisible);
-		}
-		if ((toggled & PlaybackService.FLAG_EMPTY_QUEUE) != 0 && mEmptyQueue != null) {
-			mEmptyQueue.setVisibility((state & PlaybackService.FLAG_EMPTY_QUEUE) == 0 ? View.GONE : View.VISIBLE);
-		}
-	}
-
-	@Override
 	protected void onSongChange(Song song)
 	{
 		super.onSongChange(song);
 
-		if (mTitle != null) {
-			Bitmap cover = null;
-
-			if (song == null) {
-				if (mActionControls == null) {
-					mTitle.setText(R.string.none);
-					mArtist.setText(null);
-				} else {
-					mTitle.setText(null);
-					mArtist.setText(null);
-					mCover.setImageDrawable(null);
-					return;
-				}
-			} else {
-				Resources res = getResources();
-				String title = song.title == null ? res.getString(R.string.unknown) : song.title;
-				String artist = song.artist == null ? res.getString(R.string.unknown) : song.artist;
-				mTitle.setText(title);
-				mArtist.setText(artist);
-				cover = song.getCover(this);
-			}
+		if (song == null) {
+			mTitle.setText(null);
+			mArtist.setText(null);
+			mCover.setImageDrawable(null);
+		} else {
+			Resources res = getResources();
+			String title = song.title == null ? res.getString(R.string.unknown) : song.title;
+			String artist = song.artist == null ? res.getString(R.string.unknown) : song.artist;
+			mTitle.setText(title);
+			mArtist.setText(artist);
+			Bitmap cover = song.getCover(this);
 
 			if (Song.mDisableCoverArt)
 				mCover.setVisibility(View.GONE);
@@ -1387,8 +1326,23 @@ public class LibraryActivity
 			requeryIfNeeded(position - 1);
 		updateLimiterViews();
 
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-			CompatHoneycomb.selectTab(this, position);
-		}
+		ActionBar ab = getActionBar();
+		ab.selectTab(ab.getTabAt(position));
+	}
+
+	@Override
+	public void onTabReselected(ActionBar.Tab tab, FragmentTransaction ft)
+	{
+	}
+
+	@Override
+	public void onTabSelected(ActionBar.Tab tab, FragmentTransaction ft)
+	{
+		mViewPager.setCurrentItem(tab.getPosition());
+	}
+
+	@Override
+	public void onTabUnselected(ActionBar.Tab tab, FragmentTransaction ft)
+	{
 	}
 }

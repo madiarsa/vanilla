@@ -22,13 +22,12 @@
 
 package org.kreed.vanilla;
 
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.BroadcastReceiver;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
-import android.os.Build;
 import android.os.SystemClock;
 import android.telephony.TelephonyManager;
 import android.view.KeyEvent;
@@ -182,12 +181,12 @@ public class MediaButtonReceiver extends BroadcastReceiver {
 	 */
 	public static void registerMediaButton(Context context)
 	{
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.FROYO || !useHeadsetControls(context))
+		if (!useHeadsetControls(context))
 			return;
 
 		AudioManager audioManager = (AudioManager)context.getSystemService(Context.AUDIO_SERVICE);
 		ComponentName receiver = new ComponentName(context.getPackageName(), MediaButtonReceiver.class.getName());
-		CompatFroyo.registerMediaButtonEventReceiver(audioManager, receiver);
+		audioManager.registerMediaButtonEventReceiver(receiver);
 	}
 
 	/**
@@ -197,12 +196,9 @@ public class MediaButtonReceiver extends BroadcastReceiver {
 	 */
 	public static void unregisterMediaButton(Context context)
 	{
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.FROYO)
-			return;
-
 		AudioManager audioManager = (AudioManager)context.getSystemService(Context.AUDIO_SERVICE);
 		ComponentName receiver = new ComponentName(context.getPackageName(), MediaButtonReceiver.class.getName());
-		CompatFroyo.unregisterMediaButtonEventReceiver(audioManager, receiver);
+		audioManager.unregisterMediaButtonEventReceiver(receiver);
 	}
 
 	@Override

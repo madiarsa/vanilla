@@ -47,7 +47,6 @@ THE SOFTWARE.
 	<string name="new_playlist">Ny Spilleliste…</string>
 	<string name="expand">Utvid</string>
 	<string name="delete">Slett</string>
-	<string name="playback_view">Spilles Nå</string>
 	<string name="search">Søk</string>
 
 	<plurals name="playing">
@@ -73,7 +72,6 @@ THE SOFTWARE.
 	<string name="playlists">Spillelister</string>
 	<string name="genres">Gjangre</string>
 
-	<string name="none">Ingen</string>
 	<string name="unknown">Ukjent</string>
 	<string name="play_all">Soill Alt</string>
 	<string name="enqueue_all">Kø Alt</string>

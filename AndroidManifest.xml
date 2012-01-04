@@ -55,7 +55,7 @@ THE SOFTWARE.
 			android:theme="@style/BackActionBar" />
 		<activity
 			android:name="MiniPlaybackActivity"
-			android:theme="@style/Dialog"
+			android:theme="@android:style/Theme.Holo.Dialog"
 			android:excludeFromRecents="true"
 			android:launchMode="singleInstance" />
 		<receiver

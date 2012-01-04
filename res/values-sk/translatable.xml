@@ -47,7 +47,6 @@ THE SOFTWARE.
 	<string name="new_playlist">Nový zoznam skladieb…</string>
 	<string name="expand">Rozšíriť</string>
 	<string name="delete">Odstrániť</string>
-	<string name="playback_view">Práve sa prehráva</string>
 	<string name="search">Hľadať</string>
 
 	<plurals name="playing">
@@ -77,7 +76,6 @@ THE SOFTWARE.
 	<string name="playlists">Zoznamy skladieb</string>
 	<string name="genres">Žánre</string>
 
-	<string name="none">Nič</string>
 	<string name="unknown">Neznáme</string>
 	<string name="play_all">Prehrať všetko</string>
 	<string name="enqueue_all">Pridať do zoznamu všetko</string>

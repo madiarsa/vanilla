@@ -26,8 +26,10 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.app.backup.BackupManager;
 import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -42,8 +44,10 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
+import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
-import android.os.Build;
+import android.media.RemoteControlClient;
+import android.media.audiofx.Equalizer;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -75,6 +79,7 @@ public final class PlaybackService extends Service
 	         , SharedPreferences.OnSharedPreferenceChangeListener
 	         , SongTimeline.Callback
 	         , SensorEventListener
+	         , AudioManager.OnAudioFocusChangeListener
 {
 	/**
 	 * Name of the state file.
@@ -271,9 +276,13 @@ public final class PlaybackService extends Service
 	 */
 	private SensorManager mSensorManager;
 	/**
-	 * The equalizer wrapper.
+	 * The equalizer instance.
 	 */
-	private CompatEq mEqualizer;
+	private Equalizer mEqualizer;
+	/*
+	 * The RemoteControlClient used for lockscreen controls, etc.
+	 */
+	private RemoteControlClient mRemote;
 
 	SongTimeline mTimeline;
 	private Song mCurrentSong;
@@ -351,17 +360,13 @@ public final class PlaybackService extends Service
 		mMediaPlayer.setOnCompletionListener(this);
 		mMediaPlayer.setOnErrorListener(this);
 
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-			mEqualizer = new CompatEq(mMediaPlayer);
-		}
+		Equalizer eq = new Equalizer(0, mMediaPlayer.getAudioSessionId());
+		eq.setEnabled(true);
+		mEqualizer = eq;
 
 		mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
 		mAudioManager = (AudioManager)getSystemService(AUDIO_SERVICE);
 		mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
-
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO) {
-			CompatFroyo.createAudioFocus();
-		}
 
 		SharedPreferences settings = getSettings(this);
 		settings.registerOnSharedPreferenceChangeListener(this);
@@ -397,8 +402,21 @@ public final class PlaybackService extends Service
 
 		getContentResolver().registerContentObserver(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, true, mObserver);
 
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-			CompatIcs.registerRemote(this, mAudioManager);
+		if (MediaButtonReceiver.useHeadsetControls(this)) {
+			MediaButtonReceiver.registerMediaButton(this);
+
+			Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
+			mediaButtonIntent.setComponent(new ComponentName(getPackageName(), MediaButtonReceiver.class.getName()));
+			PendingIntent mediaPendingIntent = PendingIntent.getBroadcast(this, 0, mediaButtonIntent, 0);
+			RemoteControlClient remote = new RemoteControlClient(mediaPendingIntent);
+			int flags = RemoteControlClient.FLAG_KEY_MEDIA_NEXT
+				| RemoteControlClient.FLAG_KEY_MEDIA_PREVIOUS
+				| RemoteControlClient.FLAG_KEY_MEDIA_PLAY_PAUSE
+				| RemoteControlClient.FLAG_KEY_MEDIA_PLAY
+				| RemoteControlClient.FLAG_KEY_MEDIA_PAUSE;
+			remote.setTransportControlFlags(flags);
+			mAudioManager.registerRemoteControlClient(remote);
+			mRemote = remote;
 		}
 
 		mLooper = thread.getLooper();
@@ -517,10 +535,10 @@ public final class PlaybackService extends Service
 	{
 		float base = mUserVolume;
 
-		if (base > 1.0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
+		if (base > 1.0f) {
 			// In Gingerbread and above, MediaPlayer no longer accepts volumes
 			// > 1.0. So we use an equalizer instead.
-			CompatEq eq = mEqualizer;
+			Equalizer eq = mEqualizer;
 			short gain = (short)(2000 * Math.log10(base));
 			for (short i = eq.getNumberOfBands(); --i != -1; ) {
 				eq.setBandLevel(i, gain);
@@ -580,9 +598,7 @@ public final class PlaybackService extends Service
 			mShakeThreshold = settings.getInt("shake_threshold", 80) / 10.0f;
 		}
 
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO) {
-			CompatFroyo.dataChanged(this);
-		}
+		new BackupManager(this).dataChanged();
 	}
 
 	/**
@@ -647,9 +663,7 @@ public final class PlaybackService extends Service
 				if (mNotificationMode != NEVER)
 					startForeground(NOTIFICATION_ID, createNotification(mCurrentSong, mState));
 
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO) {
-					CompatFroyo.requestAudioFocus(mAudioManager);
-				}
+				mAudioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
 				if (mWakeLock != null)
 					mWakeLock.acquire();
 			} else {
@@ -699,11 +713,7 @@ public final class PlaybackService extends Service
 		}
 
 		updateWidgets();
-
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-			CompatIcs.updateRemote(this, mCurrentSong, mState);
-		}
-
+		updateRemote();
 		if (mStockBroadcast)
 			stockMusicBroadcast();
 		if (mScrobble)
@@ -1579,6 +1589,7 @@ public final class PlaybackService extends Service
 		return notification;
 	}
 
+	@Override
 	public void onAudioFocusChange(int type)
 	{
 		Log.d("VanillaMusic", "audio focus change: " + type);
@@ -1709,5 +1720,27 @@ public final class PlaybackService extends Service
 		default:
 			throw new IllegalArgumentException("Invalid action: " + action);
 		}
+	}
+
+	/**
+	 * Update the RemoteControlClient with current song info and playback state.
+	 */
+	public void updateRemote()
+	{
+		RemoteControlClient remote = mRemote;
+		if (remote == null)
+			return;
+
+		remote.setPlaybackState((mState & PlaybackService.FLAG_PLAYING) != 0 ? RemoteControlClient.PLAYSTATE_PLAYING : RemoteControlClient.PLAYSTATE_PAUSED);
+
+		Song song = mCurrentSong;
+		RemoteControlClient.MetadataEditor editor = remote.editMetadata(true);
+		if (song != null) {
+			editor.putString(MediaMetadataRetriever.METADATA_KEY_ARTIST, song.artist);
+			editor.putString(MediaMetadataRetriever.METADATA_KEY_ALBUM, song.album);
+			editor.putString(MediaMetadataRetriever.METADATA_KEY_TITLE, song.title);
+			editor.putBitmap(RemoteControlClient.MetadataEditor.BITMAP_KEY_ARTWORK, song.getCover(this));
+		}
+		editor.apply();
 	}
 }

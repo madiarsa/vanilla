@@ -27,16 +27,16 @@ THE SOFTWARE.
 	android:layout_height="wrap_content"
 	android:orientation="horizontal">
 	<RadioButton
-		style="@style/AlertDialogItem"
 		android:id="@+id/ascending"
 		android:text="@string/ascending"
+		android:textColor="?android:textColorAlertDialogListItem"
 		android:layout_width="0px"
 		android:layout_height="fill_parent"
 		android:layout_weight="1" />
 	<RadioButton
-		style="@style/AlertDialogItem"
 		android:id="@+id/descending"
 		android:text="@string/descending"
+		android:textColor="?android:textColorAlertDialogListItem"
 		android:layout_width="0px"
 		android:layout_height="fill_parent"
 		android:layout_weight="1" />

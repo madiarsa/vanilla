@@ -57,7 +57,6 @@ THE SOFTWARE.
 	<string name="new_playlist">New Playlist…</string>
 	<string name="expand">Expand</string>
 	<string name="delete">Delete</string>
-	<string name="playback_view">Now Playing</string>
 	<string name="sort_by">Sort By</string>
 	<string name="search">Search</string>
 	<string name="done">Done</string>
@@ -90,7 +89,6 @@ THE SOFTWARE.
 	<string name="genres">Genres</string>
 	<string name="files">Files</string>
 
-	<string name="none">None</string>
 	<string name="unknown">Unknown</string>
 	<string name="play_all">Play All</string>
 	<string name="enqueue_all">Enqueue All</string>
