@@ -171,8 +171,6 @@ THE SOFTWARE.
 	<string name="idle_timeout_title">Idle Timeout</string>
 	<string name="disable_cover_art_title">Disable Cover Art</string>
 	<string name="disable_cover_art_summary">Avoid loading cover art anywhere in the application</string>
-	<string name="double_tap_title">Double Tap Widget</string>
-	<string name="double_tap_summary">Double-tapping the 1x1 widget will open the player. Incurs a 400ms delay before the widget responds to actions.</string>
 	<string name="scrobble_title">Use ScrobbleDroid API</string>
 	<string name="scrobble_summary">Scrobble to Last.FM through ScrobbleDroid or Simple Last.FM Scrobbler</string>
 	<string name="stock_broadcast_title">Emulate Stock Broadcasts</string>

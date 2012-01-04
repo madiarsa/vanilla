@@ -128,8 +128,6 @@ THE SOFTWARE.
 	<string name="use_idle_timeout_title">Aktiver Tomgang</string>
 	<string name="use_idle_timeout_summary">Når aktiv, blir avspillingen stoppet etter en gitt periode med inaktivitet</string>
 	<string name="idle_timeout_title">Tomgang</string>
-	<string name="double_tap_title">Dobbeltapp Widget</string>
-	<string name="double_tap_summary">Dobbeltapping på 1x1 widget vil åpne spilleren. Forvent en 400ms forsinkelse før widgeten reagerer på handlingen.</string>
 	<string name="scrobble_title">Bruk ScrobbleDroid API</string>
 	<string name="scrobble_summary">Scrobble til Last.FM via ScrobbleDroid eller Simple Last.FM Scrobbler</string>
 	<string name="stock_broadcast_title">Emuler Innebygd Sendinger</string>

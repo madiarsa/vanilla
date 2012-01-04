@@ -59,46 +59,14 @@ THE SOFTWARE.
 			android:excludeFromRecents="true"
 			android:launchMode="singleInstance" />
 		<receiver
-			android:name=".OneCellWidget"
-			android:label="Vanilla Music 1x1">
-			<intent-filter>
-				<action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-			</intent-filter>
-			<meta-data
-				android:name="android.appwidget.provider"
-				android:resource="@xml/one_cell_widget" />
-		</receiver>
-		<receiver
 			android:name=".FourLongWidget"
-			android:label="Vanilla Music 1x4">
+			android:label="@string/app_name">
 			<intent-filter>
 				<action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
 			</intent-filter>
 			<meta-data
 				android:name="android.appwidget.provider"
 				android:resource="@xml/four_long_widget" />
-		</receiver>
-		<receiver
-			android:name=".FourSquareWidget"
-			android:label="Vanilla Music 2x2">
-			<intent-filter>
-				<action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-			</intent-filter>
-			<meta-data
-				android:name="android.appwidget.provider"
-				android:resource="@xml/four_square_widget" />
-		</receiver>
-		<!-- This widget has a minimum size of 2x2, but is really more useful
-		     if it is at least 3x3... so that's what we'll call it. -->
-		<receiver
-			android:name=".WidgetD"
-			android:label="Vanilla Music 3x3">
-			<intent-filter>
-				<action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-			</intent-filter>
-			<meta-data
-				android:name="android.appwidget.provider"
-				android:resource="@xml/widget_d" />
 		</receiver>
 		<receiver android:name="MediaButtonReceiver" >
 			<intent-filter android:priority="999">

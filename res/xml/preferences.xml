@@ -169,11 +169,6 @@ THE SOFTWARE.
 			android:summary="@string/disable_cover_art_summary"
 			android:defaultValue="false" />
 		<CheckBoxPreference
-			android:key="double_tap"
-			android:title="@string/double_tap_title"
-			android:summary="@string/double_tap_summary"
-			android:defaultValue="false" />
-		<CheckBoxPreference
 			android:key="scrobble"
 			android:title="@string/scrobble_title"
 			android:defaultValue="true"

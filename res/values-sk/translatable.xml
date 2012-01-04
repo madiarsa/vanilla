@@ -135,8 +135,6 @@ THE SOFTWARE.
 	<string name="use_idle_timeout_title">Povoliť časový limit nečinnosti</string>
 	<string name="use_idle_timeout_summary">Keď je povolené, prehrávanie sa zastaví po danom čase nečinnosti.</string>
 	<string name="idle_timeout_title">Časový limit nečinnosti</string>
-	<string name="double_tap_title">Dvojité ťuknutie na miniaplikáciu</string>
-	<string name="double_tap_summary">Dvojité ťuknutie na 1×1 miniaplikáciu otvorí prehrávač. Vytvorí oneskorenie 0,4 sekúnd pred tým, ako miniaplikácia reaguje na akciu.</string>
 	<string name="scrobble_title">Použiť ScrobbleDroid API</string>
 	<string name="scrobble_summary">Scrobble prístup k Last.FM cez ScrobbleDroid alebo Simple Last.FM Scrobbler.</string>
 	<string name="stock_broadcast_title">Tváriť sa ako originálny prehrávač</string>

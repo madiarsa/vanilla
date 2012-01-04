@@ -105,27 +105,9 @@ public final class PlaybackService extends Service
 	 */
 	public static final String ACTION_PAUSE = "org.kreed.vanilla.action.PAUSE";
 	/**
-	 * Action for startService: toggle playback on/off.
-	 *
-	 * Unlike {@link PlaybackService#ACTION_TOGGLE_PLAYBACK}, the toggle does
-	 * not occur immediately. Instead, it is delayed so that if two of these
-	 * actions are received within 400 ms, the playback activity is opened
-	 * instead.
-	 */
-	public static final String ACTION_TOGGLE_PLAYBACK_DELAYED = "org.kreed.vanilla.action.TOGGLE_PLAYBACK_DELAYED";
-	/**
 	 * Action for startService: advance to the next song.
 	 */
 	public static final String ACTION_NEXT_SONG = "org.kreed.vanilla.action.NEXT_SONG";
-	/**
-	 * Action for startService: advance to the next song.
-	 *
-	 * Unlike {@link PlaybackService#ACTION_NEXT_SONG}, the toggle does
-	 * not occur immediately. Instead, it is delayed so that if two of these
-	 * actions are received within 400 ms, the playback activity is opened
-	 * instead.
-	 */
-	public static final String ACTION_NEXT_SONG_DELAYED = "org.kreed.vanilla.action.NEXT_SONG_DELAYED";
 	/**
 	 * Action for startService: advance to the next song.
 	 *
@@ -445,26 +427,12 @@ public final class PlaybackService extends Service
 
 			if (ACTION_TOGGLE_PLAYBACK.equals(action)) {
 				playPause();
-			} else if (ACTION_TOGGLE_PLAYBACK_DELAYED.equals(action)) {
-				if (mHandler.hasMessages(CALL_GO, Integer.valueOf(0))) {
-					mHandler.removeMessages(CALL_GO, Integer.valueOf(0));
-					startActivity(new Intent(this, LibraryActivity.class).setAction(Intent.ACTION_MAIN));
-				} else {
-					mHandler.sendMessageDelayed(mHandler.obtainMessage(CALL_GO, Integer.valueOf(0)), 400);
-				}
 			} else if (ACTION_NEXT_SONG.equals(action)) {
 				setCurrentSong(1);
 				userActionTriggered();
 			} else if (ACTION_NEXT_SONG_AUTOPLAY.equals(action)) {
 				setCurrentSong(1);
 				play();
-			} else if (ACTION_NEXT_SONG_DELAYED.equals(action)) {
-				if (mHandler.hasMessages(CALL_GO, Integer.valueOf(1))) {
-					mHandler.removeMessages(CALL_GO, Integer.valueOf(1));
-					startActivity(new Intent(this, LibraryActivity.class).setAction(Intent.ACTION_MAIN));
-				} else {
-					mHandler.sendMessageDelayed(mHandler.obtainMessage(CALL_GO, Integer.valueOf(1)), 400);
-				}
 			} else if (ACTION_PREVIOUS_SONG.equals(action)) {
 				setCurrentSong(-1);
 				userActionTriggered();
@@ -748,10 +716,7 @@ public final class PlaybackService extends Service
 	private void initWidgets()
 	{
 		AppWidgetManager manager = AppWidgetManager.getInstance(this);
-		OneCellWidget.checkEnabled(this, manager);
-		FourSquareWidget.checkEnabled(this, manager);
 		FourLongWidget.checkEnabled(this, manager);
-		WidgetD.checkEnabled(this, manager);
 	}
 
 	/**
@@ -762,10 +727,7 @@ public final class PlaybackService extends Service
 		AppWidgetManager manager = AppWidgetManager.getInstance(this);
 		Song song = mCurrentSong;
 		int state = mState;
-		OneCellWidget.updateWidget(this, manager, song, state);
 		FourLongWidget.updateWidget(this, manager, song, state);
-		FourSquareWidget.updateWidget(this, manager, song, state);
-		WidgetD.updateWidget(this, manager, song, state);
 	}
 
 	/**
@@ -1119,11 +1081,6 @@ public final class PlaybackService extends Service
 	 * arg1 should be the progress in the fade as a percentage, 1-100.
 	 */
 	private static final int FADE_OUT = 7;
-	/**
-	 * If arg1 is 0, calls {@link PlaybackService#playPause()}.
-	 * Otherwise, calls {@link PlaybackService#setCurrentSong(int)} with arg1.
-	 */
-	private static final int CALL_GO = 8;
 	private static final int BROADCAST_CHANGE = 10;
 	private static final int SAVE_STATE = 12;
 	private static final int PROCESS_SONG = 13;
@@ -1133,12 +1090,6 @@ public final class PlaybackService extends Service
 	public boolean handleMessage(Message message)
 	{
 		switch (message.what) {
-		case CALL_GO:
-			if (message.arg1 == 0)
-				playPause();
-			else
-				setCurrentSong(message.arg1);
-			break;
 		case SAVE_STATE:
 			// For unexpected terminations: crashes, task killers, etc.
 			// In most cases onDestroy will handle this
