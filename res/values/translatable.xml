@@ -134,12 +134,6 @@ THE SOFTWARE.
 	<string name="headset_play_title">Play When Plugged</string>
 	<string name="headset_play_summary">Play when the headphones are plugged in. (Only works when the service is running.)</string>
 
-	<string name="pref_notifications">Notifications</string>
-	<string name="notification_mode_title">Notification Mode</string>
-	<string name="notification_action_title">Notification Action</string>
-	<string name="notification_invert_color_title">Invert Notification Color</string>
-	<string name="notification_invert_color_summary">Use white text instead of black text</string>
-
 	<string name="pref_playback_view">Playback View</string>
 	<string name="playback_on_startup_title">Open on Startup</string>
 	<string name="playback_on_startup_summary">Open playback view on startup</string>
@@ -181,14 +175,6 @@ THE SOFTWARE.
 
 	<!-- The following are for the list preferences -->
 	<string name="last_used_action">Last used action</string>
-
-	<string name="never_show">Never show</string>
-	<string name="show_when_playing">Show when playing (default)</string>
-	<string name="always_show">Always show</string>
-
-	<string name="open_main_activity">Open main activity (default)</string>
-	<string name="open_mini_popup">Open mini popup</string>
-	<string name="skip_to_next_song">Skip to next song</string>
 
 	<string name="info_on_cover">Info on cover art</string>
 	<string name="info_below_cover">Info below cover art</string>

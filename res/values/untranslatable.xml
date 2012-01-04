@@ -101,16 +101,6 @@ THE SOFTWARE.
 		<item>@string/do_nothing</item>
 		<item>@string/expand</item>
 	</string-array>
-	<string-array name="notification_mode_entries">
-		<item>@string/never_show</item>
-		<item>@string/show_when_playing</item>
-		<item>@string/always_show</item>
-	</string-array>
-	<string-array name="notification_action_entries">
-		<item>@string/open_main_activity</item>
-		<item>@string/open_mini_popup</item>
-		<item>@string/skip_to_next_song</item>
-	</string-array>
 	<string-array name="display_mode_entries">
 		<item>@string/info_on_cover</item>
 		<item>@string/info_below_cover</item>

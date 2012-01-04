@@ -102,12 +102,6 @@ THE SOFTWARE.
 	<string name="headset_play_title">Spill Når Tilkoblet</string>
 	<string name="headset_play_summary">Spill når hodetelefonen er tilkoblet. (Fungerer bare når tjenesten kjører.)</string>
 
-	<string name="pref_notifications">Varsler</string>
-	<string name="notification_mode_title">Varselmodus</string>
-	<string name="notification_action_title">Varsel Handling</string>
-	<string name="notification_invert_color_title">Inverter Varsling Farge</string>
-	<string name="notification_invert_color_summary">Bruk hvit tekst i stedet for svart tekst</string>
-
 	<string name="pref_playback_view">Avspill Visning</string>
 	<string name="display_mode_title">Visningsmodus</string>
 	<string name="swipe_up_action_title">Sveip Opp Handling</string>

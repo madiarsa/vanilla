@@ -35,7 +35,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.res.TypedArray;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -142,23 +141,6 @@ public final class PlaybackService extends Service
 	 */
 	public static final String ACTION_CYCLE_REPEAT = "org.kreed.vanilla.CYCLE_REPEAT";
 
-	public static final int NEVER = 0;
-	public static final int WHEN_PLAYING = 1;
-	public static final int ALWAYS = 2;
-
-	/**
-	 * Notification click action: open LaunchActivity.
-	 */
-	private static final int NOT_ACTION_MAIN_ACTIVITY = 0;
-	/**
-	 * Notification click action: open MiniPlaybackActivity.
-	 */
-	private static final int NOT_ACTION_MINI_ACTIVITY = 1;
-	/**
-	 * Notification click action: skip to next song.
-	 */
-	private static final int NOT_ACTION_NEXT_SONG = 2;
-
 	/**
 	 * If a user action is triggered within this time (in ms) after the
 	 * idle time fade-out occurs, playback will be resumed.
@@ -168,7 +150,6 @@ public final class PlaybackService extends Service
 	 * Minimum time in milliseconds between shake actions.
 	 */
 	private static final int MIN_SHAKE_PERIOD = 500;
-
 
 	/**
 	 * If set, music will play.
@@ -236,7 +217,6 @@ public final class PlaybackService extends Service
 	 * music player.
 	 */
 	private boolean mStockBroadcast;
-	private int mNotificationMode;
 	/**
 	 * If true, audio will not be played through the speaker.
 	 */
@@ -254,15 +234,6 @@ public final class PlaybackService extends Service
 	 * The time to wait before considering the player idle.
 	 */
 	private int mIdleTimeout;
-	/**
-	 * The intent for the notification to execute, created by
-	 * {@link PlaybackService#createNotificationAction(SharedPreferences)}.
-	 */
-	private PendingIntent mNotificationAction;
-	/**
-	 * Use white text instead of black default text in notification.
-	 */
-	private boolean mInvertNotification;
 
 	private Looper mLooper;
 	private Handler mHandler;
@@ -370,7 +341,6 @@ public final class PlaybackService extends Service
 
 		SharedPreferences settings = getSettings(this);
 		settings.registerOnSharedPreferenceChangeListener(this);
-		mNotificationMode = Integer.parseInt(settings.getString("notification_mode", "1"));
 		mScrobble = settings.getBoolean("scrobble", false);
 		mUserVolume = (float)Math.pow(settings.getInt("volume_int", 100) / 100.0, 3);
 		mIdleTimeout = settings.getBoolean("use_idle_timeout", false) ? settings.getInt("idle_timeout", 3600) : 0;
@@ -378,8 +348,6 @@ public final class PlaybackService extends Service
 		mHeadsetOnly = settings.getBoolean("headset_only", false);
 		mStockBroadcast = settings.getBoolean("stock_broadcast", false);
 		mHeadsetPlay = settings.getBoolean("headset_play", false);
-		mInvertNotification = settings.getBoolean("notification_inverted_color", false);
-		mNotificationAction = createNotificationAction(settings);
 		mHeadsetPause = getSettings(this).getBoolean("headset_pause", true);
 		mShakeAction = settings.getBoolean("enable_shake", false) ? Action.getAction(settings, "shake_action", Action.NextSong) : Action.Nothing;
 		mShakeThreshold = settings.getInt("shake_threshold", 80) / 10.0f;
@@ -556,19 +524,6 @@ public final class PlaybackService extends Service
 		SharedPreferences settings = getSettings(this);
 		if ("headset_pause".equals(key)) {
 			mHeadsetPause = settings.getBoolean("headset_pause", true);
-		} else if ("notification_action".equals(key)) {
-			mNotificationAction = createNotificationAction(settings);
-			updateNotification();
-		} else if ("notification_inverted_color".equals(key)) {
-			mInvertNotification = settings.getBoolean("notification_inverted_color", false);
-			updateNotification();
-		} else if ("notification_mode".equals(key)){
-			mNotificationMode = Integer.parseInt(settings.getString("notification_mode", "1"));
-			// This is the only way to remove a notification created by
-			// startForeground(), even if we are not currently in foreground
-			// mode.
-			stopForeground(true);
-			updateNotification();
 		} else if ("scrobble".equals(key)) {
 			mScrobble = settings.getBoolean("scrobble", false);
 		} else if ("volume_int".equals(key)) {
@@ -581,8 +536,6 @@ public final class PlaybackService extends Service
 			userActionTriggered();
 		} else if ("disable_cover_art".equals(key)) {
 			Song.mDisableCoverArt = settings.getBoolean("disable_cover_art", false);
-		} else if ("notification_inverted_color".equals(key)) {
-			updateNotification();
 		} else if ("headset_only".equals(key)) {
 			mHeadsetOnly = settings.getBoolean(key, false);
 			if (mHeadsetOnly && isSpeakerOn())
@@ -660,23 +613,14 @@ public final class PlaybackService extends Service
 				if (mMediaPlayerInitialized)
 					mMediaPlayer.start();
 
-				if (mNotificationMode != NEVER)
-					startForeground(NOTIFICATION_ID, createNotification(mCurrentSong, mState));
-
 				mAudioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+				startForeground(NOTIFICATION_ID, createNotification(mCurrentSong, mState));
 				if (mWakeLock != null)
 					mWakeLock.acquire();
 			} else {
 				if (mMediaPlayerInitialized)
 					mMediaPlayer.pause();
-
-				if (mNotificationMode == ALWAYS) {
-					stopForeground(false);
-					mNotificationManager.notify(NOTIFICATION_ID, createNotification(mCurrentSong, mState));
-				} else {
-					stopForeground(true);
-				}
-
+				stopForeground(true);
 				if (mWakeLock != null && mWakeLock.isHeld())
 					mWakeLock.release();
 			}
@@ -770,7 +714,7 @@ public final class PlaybackService extends Service
 
 	private void updateNotification()
 	{
-		if ((mNotificationMode == ALWAYS || mNotificationMode == WHEN_PLAYING && (mState & FLAG_PLAYING) != 0) && mCurrentSong != null)
+		if ((mState & FLAG_PLAYING) != 0 && mCurrentSong != null)
 			mNotificationManager.notify(NOTIFICATION_ID, createNotification(mCurrentSong, mState));
 		else
 			mNotificationManager.cancel(NOTIFICATION_ID);
@@ -1520,34 +1464,6 @@ public final class PlaybackService extends Service
 	}
 
 	/**
-	 * Create a PendingIntent for use with the notification.
-	 *
-	 * @param prefs Where to load the action preference from.
-	 */
-	public PendingIntent createNotificationAction(SharedPreferences prefs)
-	{
-		switch (Integer.parseInt(prefs.getString("notification_action", "0"))) {
-		case NOT_ACTION_NEXT_SONG: {
-			Intent intent = new Intent(this, PlaybackService.class);
-			intent.setAction(PlaybackService.ACTION_NEXT_SONG_AUTOPLAY);
-			return PendingIntent.getService(this, 0, intent, 0);
-		}
-		case NOT_ACTION_MINI_ACTIVITY: {
-			Intent intent = new Intent(this, MiniPlaybackActivity.class);
-			return PendingIntent.getActivity(this, 0, intent, 0);
-		}
-		default:
-			Log.w("VanillaMusic", "Unknown value for notification_action. Defaulting to 0.");
-			// fall through
-		case NOT_ACTION_MAIN_ACTIVITY: {
-			Intent intent = new Intent(this, LibraryActivity.class);
-			intent.setAction(Intent.ACTION_MAIN);
-			return PendingIntent.getActivity(this, 0, intent, 0);
-		}
-		}
-	}
-
-	/**
 	 * Create a song notification. Call through the NotificationManager to
 	 * display it.
 	 *
@@ -1573,19 +1489,12 @@ public final class PlaybackService extends Service
 		}
 		views.setTextViewText(R.id.artist, song.artist);
 
-		if (mInvertNotification) {
-			TypedArray array = getTheme().obtainStyledAttributes(new int[] { android.R.attr.textColorPrimary });
-			int color = array.getColor(0, 0xFF00FF);
-			array.recycle();
-			views.setTextColor(R.id.title, color);
-			views.setTextColor(R.id.artist, color);
-		}
-
 		Notification notification = new Notification();
 		notification.contentView = views;
 		notification.icon = playing ? R.drawable.status_icon : R.drawable.status_icon_paused;
 		notification.flags |= Notification.FLAG_ONGOING_EVENT;
-		notification.contentIntent = mNotificationAction;
+		Intent intent = new Intent(this, LibraryActivity.class);
+		notification.contentIntent = PendingIntent.getActivity(this, 0, intent, 0);
 		return notification;
 	}
 

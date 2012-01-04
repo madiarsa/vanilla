@@ -109,12 +109,6 @@ THE SOFTWARE.
 	<string name="headset_play_title">Prehrať po pripojení</string>
 	<string name="headset_play_summary">Spustí prehrávanie keď zapojíte sluchátka. Funguje iba keď beží služba.</string>
 
-	<string name="pref_notifications">Upozornenia</string>
-	<string name="notification_mode_title">Režim upozornení</string>
-	<string name="notification_action_title">Akcia upozornenia</string>
-	<string name="notification_invert_color_title">Invertovať farbu oznámenia</string>
-	<string name="notification_invert_color_summary">Použije biely text namiesto čierneho.</string>
-
 	<string name="pref_playback_view">Zobrazenie prehrávania</string>
 	<string name="display_mode_title">Režim zobrazenia</string>
 	<string name="swipe_up_action_title">Akcia prejedním prstu nahor</string>
