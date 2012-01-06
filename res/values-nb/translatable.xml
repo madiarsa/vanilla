@@ -119,8 +119,4 @@ THE SOFTWARE.
 	<string name="use_idle_timeout_title">Aktiver Tomgang</string>
 	<string name="use_idle_timeout_summary">Når aktiv, blir avspillingen stoppet etter en gitt periode med inaktivitet</string>
 	<string name="idle_timeout_title">Tomgang</string>
-	<string name="scrobble_title">Bruk ScrobbleDroid API</string>
-	<string name="scrobble_summary">Scrobble til Last.FM via ScrobbleDroid eller Simple Last.FM Scrobbler</string>
-	<string name="stock_broadcast_title">Emuler Innebygd Sendinger</string>
-	<string name="stock_broadcast_summary">Send sendinger som emulerer den innebygde spilleren til å fungere med tredjeparts låseskjermer, widgets, etc.</string>
 </resources>

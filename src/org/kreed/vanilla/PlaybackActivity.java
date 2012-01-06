@@ -24,7 +24,6 @@ package org.kreed.vanilla;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -37,8 +36,6 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
@@ -107,13 +104,6 @@ public class PlaybackActivity extends Activity
 			onServiceReady();
 		else
 			startService(new Intent(this, PlaybackService.class));
-
-		SharedPreferences prefs = PlaybackService.getSettings(this);
-		Window window = getWindow();
-		if (prefs.getBoolean("disable_lockscreen", false))
-			window.addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
-		else
-			window.clearFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
 	}
 
 	@Override

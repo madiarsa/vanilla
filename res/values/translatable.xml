@@ -155,17 +155,11 @@ THE SOFTWARE.
 	<string name="shake_threshold_title">Shake Force Threshold</string>
 
 	<string name="pref_misc">Miscellaneous Features</string>
-	<string name="disable_lockscreen_title">Disable Lockscreen</string>
-	<string name="disable_lockscreen_summary">Prevent the lockscreen from activating when in the library or playback screen</string>
 	<string name="use_idle_timeout_title">Enable Idle Timeout</string>
 	<string name="use_idle_timeout_summary">When active, playback will be stopped after the given period of inactivity</string>
 	<string name="idle_timeout_title">Idle Timeout</string>
 	<string name="disable_cover_art_title">Disable Cover Art</string>
 	<string name="disable_cover_art_summary">Avoid loading cover art anywhere in the application</string>
-	<string name="scrobble_title">Use ScrobbleDroid API</string>
-	<string name="scrobble_summary">Scrobble to Last.FM through ScrobbleDroid or Simple Last.FM Scrobbler</string>
-	<string name="stock_broadcast_title">Emulate Stock Broadcasts</string>
-	<string name="stock_broadcast_summary">Send broadcasts emulating those sent by the stock music player to work with 3rd party lockscreen controls, widgets, etc.</string>
 
 	<string name="media_scan">Refresh Library</string>
 	<string name="click_to_scan">Click to scan external storage for music</string>

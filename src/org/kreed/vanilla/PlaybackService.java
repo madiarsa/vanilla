@@ -209,12 +209,6 @@ public final class PlaybackService extends Service
 	private static SharedPreferences sSettings;
 
 	boolean mHeadsetPause;
-	private boolean mScrobble;
-	/**
-	 * If true, emulate the music status broadcasts sent by the stock android
-	 * music player.
-	 */
-	private boolean mStockBroadcast;
 	/**
 	 * If true, audio will not be played through the speaker.
 	 */
@@ -337,12 +331,10 @@ public final class PlaybackService extends Service
 
 		SharedPreferences settings = getSettings(this);
 		settings.registerOnSharedPreferenceChangeListener(this);
-		mScrobble = settings.getBoolean("scrobble", false);
 		mUserVolume = (float)Math.pow(settings.getInt("volume_int", 100) / 100.0, 3);
 		mIdleTimeout = settings.getBoolean("use_idle_timeout", false) ? settings.getInt("idle_timeout", 3600) : 0;
 		Song.mDisableCoverArt = settings.getBoolean("disable_cover_art", false);
 		mHeadsetOnly = settings.getBoolean("headset_only", false);
-		mStockBroadcast = settings.getBoolean("stock_broadcast", false);
 		mHeadsetPlay = settings.getBoolean("headset_play", false);
 		mHeadsetPause = getSettings(this).getBoolean("headset_pause", true);
 		mShakeAction = settings.getBoolean("enable_shake", false) ? Action.getAction(settings, "shake_action", Action.NextSong) : Action.Nothing;
@@ -516,8 +508,6 @@ public final class PlaybackService extends Service
 		SharedPreferences settings = getSettings(this);
 		if ("headset_pause".equals(key)) {
 			mHeadsetPause = settings.getBoolean("headset_pause", true);
-		} else if ("scrobble".equals(key)) {
-			mScrobble = settings.getBoolean("scrobble", false);
 		} else if ("volume_int".equals(key)) {
 			mUserVolume = (float)Math.pow(settings.getInt(key, 100) / 100.0, 3);
 			updateVolume();
@@ -532,8 +522,6 @@ public final class PlaybackService extends Service
 			mHeadsetOnly = settings.getBoolean(key, false);
 			if (mHeadsetOnly && isSpeakerOn())
 				unsetFlag(FLAG_PLAYING);
-		} else if ("stock_broadcast".equals(key)) {
-			mStockBroadcast = settings.getBoolean(key, false);
 		} else if ("headset_play".equals(key)) {
 			mHeadsetPlay = settings.getBoolean(key, false);
 		} else if ("enable_shake".equals(key) || "shake_action".equals(key)) {
@@ -650,10 +638,6 @@ public final class PlaybackService extends Service
 
 		updateWidgets();
 		updateRemote();
-		if (mStockBroadcast)
-			stockMusicBroadcast();
-		if (mScrobble)
-			scrobble();
 	}
 
 	/**
@@ -674,34 +658,6 @@ public final class PlaybackService extends Service
 		Song song = mCurrentSong;
 		int state = mState;
 		FourLongWidget.updateWidget(this, manager, song, state);
-	}
-
-	/**
-	 * Send a broadcast emulating that of the stock music player.
-	 */
-	private void stockMusicBroadcast()
-	{
-		Song song = mCurrentSong;
-		Intent intent = new Intent("com.android.music.playstatechanged");
-		intent.putExtra("playing", (mState & FLAG_PLAYING) != 0);
-		if (song != null) {
-			intent.putExtra("track", song.title);
-			intent.putExtra("album", song.album);
-			intent.putExtra("artist", song.artist);
-			intent.putExtra("songid", song.id);
-			intent.putExtra("albumid", song.albumId);
-		}
-		sendBroadcast(intent);
-	}
-
-	private void scrobble()
-	{
-		Song song = mCurrentSong;
-		Intent intent = new Intent("net.jjc1138.android.scrobbler.action.MUSIC_STATUS");
-		intent.putExtra("playing", (mState & FLAG_PLAYING) != 0);
-		if (song != null)
-			intent.putExtra("id", (int)song.id);
-		sendBroadcast(intent);
 	}
 
 	private void updateNotification()
