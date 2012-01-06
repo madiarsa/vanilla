@@ -103,7 +103,6 @@ THE SOFTWARE.
 	<string name="headset_play_summary">Spill når hodetelefonen er tilkoblet. (Fungerer bare når tjenesten kjører.)</string>
 
 	<string name="pref_playback_view">Avspill Visning</string>
-	<string name="display_mode_title">Visningsmodus</string>
 	<string name="swipe_up_action_title">Sveip Opp Handling</string>
 	<string name="swipe_down_action_title">Sveip Ned Handling</string>
 	<string name="cover_press_action_title">Cover Tapp Handling</string>

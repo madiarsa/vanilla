@@ -49,12 +49,8 @@ import android.widget.Toast;
  */
 public class PlaybackActivity extends Activity
 	implements Handler.Callback,
-	           View.OnClickListener,
-	           CoverView.Callback
+	           View.OnClickListener
 {
-	private Action mUpAction;
-	private Action mDownAction;
-
 	/**
 	 * A Handler running on the UI thread, in contrast with mHandler which runs
 	 * on a worker thread.
@@ -113,9 +109,6 @@ public class PlaybackActivity extends Activity
 			startService(new Intent(this, PlaybackService.class));
 
 		SharedPreferences prefs = PlaybackService.getSettings(this);
-		mUpAction = Action.getAction(prefs, "swipe_up_action", Action.Nothing);
-		mDownAction = Action.getAction(prefs, "swipe_down_action", Action.Nothing);
-
 		Window window = getWindow();
 		if (prefs.getBoolean("disable_lockscreen", false))
 			window.addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
@@ -162,7 +155,9 @@ public class PlaybackActivity extends Activity
 		return super.onKeyUp(keyCode, event);
 	}
 
-	@Override
+	/**
+	 * Call {@link PlaybackService#shiftCurrentSong(int)} and update this activity.
+	 */
 	public void shiftCurrentSong(int delta)
 	{
 		setSong(PlaybackService.get(this).shiftCurrentSong(delta));
@@ -371,18 +366,6 @@ public class PlaybackActivity extends Activity
 	public void enqueue(int type)
 	{
 		PlaybackService.get(this).enqueueFromCurrent(type);
-	}
-
-	@Override
-	public void upSwipe()
-	{
-		PlaybackService.get(this).performAction(mUpAction, this);
-	}
-
-	@Override
-	public void downSwipe()
-	{
-		PlaybackService.get(this).performAction(mDownAction, this);
 	}
 
 	private static final int GROUP_SHUFFLE = 100;

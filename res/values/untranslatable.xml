@@ -101,10 +101,4 @@ THE SOFTWARE.
 		<item>@string/do_nothing</item>
 		<item>@string/expand</item>
 	</string-array>
-	<string-array name="display_mode_entries">
-		<item>@string/info_on_cover</item>
-		<item>@string/info_below_cover</item>
-		<item>@string/fixed_info</item>
-		<item>@string/fixed_info_fullscreen</item>
-	</string-array>
 </resources>

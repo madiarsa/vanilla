@@ -26,6 +26,11 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
+import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.RectF;
+import android.graphics.Shader;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -61,11 +66,6 @@ public final class CoverView extends View implements Handler.Callback {
 	 */
 	private final Handler mUiHandler = new Handler(this);
 	/**
-	 * How to render cover art and metadata. One of
-	 * CoverBitmap.STYLE_*
-	 */
-	private int mCoverStyle;
-	/**
 	 * Interface to respond to CoverView motion actions.
 	 */
 	public interface Callback {
@@ -93,13 +93,9 @@ public final class CoverView extends View implements Handler.Callback {
 	 */
 	private final Song[] mSongs = new Song[3];
 	/**
-	 * The covers for the current songs: 0 = previous, 1 = current, and 2 = next.
+	 * Cover art for each song in mSongs.
 	 */
-	private final Bitmap[] mBitmaps = new Bitmap[3];
-	/**
-	 * Cache of cover bitmaps generated for songs. The song ids are the keys.
-	 */
-	private final Cache<Bitmap> mBitmapCache = new Cache<Bitmap>(8);
+	private final Bitmap[] mCoverArt = new Bitmap[3];
 	/**
 	 * Cover art to use when a song has no cover art in no info display styles.
 	 */
@@ -169,13 +165,11 @@ public final class CoverView extends View implements Handler.Callback {
 	 *
 	 * @param looper A looper created on a worker thread.
 	 * @param callback The callback for nextSong/previousSong
-	 * @param style One of CoverBitmap.STYLE_*
 	 */
-	public void setup(Looper looper, Callback callback, int style)
+	public void setup(Looper looper, Callback callback)
 	{
 		mHandler = new Handler(looper, this);
 		mCallback = callback;
-		mCoverStyle = style;
 	}
 
 	/**
@@ -207,14 +201,22 @@ public final class CoverView extends View implements Handler.Callback {
 		int height = getHeight();
 		int x = 0;
 		int scrollX = getScrollX();
+		Rect dest = new Rect();
 
 		canvas.drawColor(Color.BLACK);
 
-		for (Bitmap bitmap : mBitmaps) {
+		for (Bitmap bitmap : mCoverArt) {
 			if (bitmap != null && scrollX + width > x && scrollX < x + width) {
-				int xOffset = (width - bitmap.getWidth()) / 2;
-				int yOffset = (height - bitmap.getHeight()) / 2;
-				canvas.drawBitmap(bitmap, x + xOffset, yOffset, null);
+				int bitmapWidth = bitmap.getWidth();
+				int bitmapHeight = bitmap.getHeight();
+				float scale = Math.min((float)width / bitmapWidth, (float)height / bitmapHeight);
+				bitmapWidth *= scale;
+				bitmapHeight *= scale;
+				dest.left = x + (width - bitmapWidth) / 2;
+				dest.right = dest.left + bitmapWidth;
+				dest.top = (height - bitmapHeight) / 2;
+				dest.bottom = dest.top + bitmapHeight;
+				canvas.drawBitmap(bitmap, null, dest, null);
 			}
 			x += width;
 		}
@@ -331,38 +333,24 @@ public final class CoverView extends View implements Handler.Callback {
 	}
 
 	/**
-	 * Generates a bitmap for the given song if the cache does not contain one
-	 * for it, or moves the bitmap to the top of the cache if it does.
+	 * Fetches cover art from the MediaStore for the song at the given position.
 	 *
 	 * @param i The position of the song in mSongs.
 	 */
-	private void generateBitmap(int i)
+	private void fetchCover(int i)
 	{
 		Song song = mSongs[i];
-		if (song == null || song.id == -1)
+		if (song == null)
 			return;
 
-		Bitmap reuse = mBitmapCache.discardOldest();
-		if (reuse == mDefaultCover)
-			reuse = null;
-
-		int style = mCoverStyle;
-		Context context = getContext();
-		Bitmap cover = song.getCover(context);
-		int width = getWidth();
-		int height = getHeight();
-
-		Bitmap bitmap;
-		if (cover == null && (style == CoverBitmap.STYLE_NO_INFO || style == CoverBitmap.STYLE_NO_INFO_ZOOMED)) {
+		Bitmap bitmap = song.getCover(getContext());
+		if (bitmap == null) {
 			if (mDefaultCover == null)
-				mDefaultCover = CoverBitmap.generateDefaultCover(width, height);
+				mDefaultCover = generateDefaultCover();
 			bitmap = mDefaultCover;
-		} else {
-			bitmap = CoverBitmap.createBitmap(context, style, cover, song, width, height, reuse);
 		}
 
-		mBitmaps[i] = bitmap;
-		mBitmapCache.put(song.id, bitmap);
+		mCoverArt[i] = bitmap;
 		postInvalidate();
 	}
 
@@ -373,16 +361,16 @@ public final class CoverView extends View implements Handler.Callback {
 	public void setSong(int i, Song song)
 	{
 		mSongs[i] = song;
-		if (song == null) {
-			mBitmaps[i] = null;
+		if (song == null || song.hasNoCover()) {
+			if (mDefaultCover == null)
+				mDefaultCover = generateDefaultCover();
+			mCoverArt[i] = mDefaultCover;
 		} else {
-			Bitmap bitmap = mBitmapCache.get(song.id);
-			if (bitmap != null) {
-				mBitmaps[i] = bitmap;
-				mBitmapCache.touch(song.id);
+			Bitmap bitmap = song.getCachedCover();
+			if (bitmap == null) {
+				mHandler.sendMessage(mHandler.obtainMessage(MSG_FETCH_COVER, i, 0));
 			} else {
-				mBitmaps[i] = null;
-				mHandler.sendMessage(mHandler.obtainMessage(MSG_GENERATE_BITMAP, i, 0));
+				mCoverArt[i] = bitmap;
 			}
 		}
 	}
@@ -399,7 +387,7 @@ public final class CoverView extends View implements Handler.Callback {
 			return;
 		}
 
-		mHandler.removeMessages(MSG_GENERATE_BITMAP);
+		mHandler.removeMessages(MSG_FETCH_COVER);
 		setSong(1, service.getSong(0));
 		setSong(2, service.getSong(1));
 		setSong(0, service.getSong(-1));
@@ -408,11 +396,9 @@ public final class CoverView extends View implements Handler.Callback {
 	}
 
 	/**
-	 * Call {@link CoverView#generateBitmap(int)} for the song at the given index.
-	 *
-	 * obj must be the Song to generate a bitmap for.
+	 * Call {@link CoverView#fetchCover(int)} with arg1 as the argument.
 	 */
-	private static final int MSG_GENERATE_BITMAP = 0;
+	private static final int MSG_FETCH_COVER = 0;
 	/**
 	 * Perform a long click.
 	 *
@@ -431,8 +417,8 @@ public final class CoverView extends View implements Handler.Callback {
 	public boolean handleMessage(Message message)
 	{
 		switch (message.what) {
-		case MSG_GENERATE_BITMAP:
-			generateBitmap(message.arg1);
+		case MSG_FETCH_COVER:
+			fetchCover(message.arg1);
 			break;
 		case MSG_LONG_CLICK:
 			if (Math.abs(mStartX - mLastMotionX) + Math.abs(mStartY - mLastMotionY) < 10) {
@@ -486,7 +472,7 @@ public final class CoverView extends View implements Handler.Callback {
 		int x = 0;
 		int maxHeight = 0;
 
-		for (Bitmap bitmap : mBitmaps) {
+		for (Bitmap bitmap : mCoverArt) {
 			if (bitmap != null && scrollX + width > x && scrollX < x + width) {
 				int bitmapHeight = bitmap.getHeight();
 				if (bitmapHeight > maxHeight) {
@@ -498,5 +484,45 @@ public final class CoverView extends View implements Handler.Callback {
 
 		int offset = (height - maxHeight) / 2;
 		invalidate(scrollX, offset, scrollX + width, height - offset);
+	}
+
+	/**
+	 * Generate the default cover (a rendition of a CD).
+	 *
+	 * @return A bitmap of the default cover.
+	 */
+	public Bitmap generateDefaultCover()
+	{
+		int size = Math.min(getWidth(), getHeight());
+		int halfSize = size / 2;
+		int eightSize = size / 8;
+
+		Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565);
+		LinearGradient gradient = new LinearGradient(size, 0, 0, size, 0xff646464, 0xff464646, Shader.TileMode.CLAMP);
+		RectF oval = new RectF(eightSize, 0, size - eightSize, size);
+
+		Paint paint = new Paint();
+		paint.setAntiAlias(true);
+
+		Canvas canvas = new Canvas(bitmap);
+		canvas.rotate(-45, halfSize, halfSize);
+
+		paint.setShader(gradient);
+		canvas.translate(size / 20, size / 20);
+		canvas.scale(0.9f, 0.9f);
+		canvas.drawOval(oval, paint);
+
+		paint.setShader(null);
+		paint.setColor(0xff000000);
+		canvas.translate(size / 3, size / 3);
+		canvas.scale(0.333f, 0.333f);
+		canvas.drawOval(oval, paint);
+
+		paint.setShader(gradient);
+		canvas.translate(size / 3, size / 3);
+		canvas.scale(0.333f, 0.333f);
+		canvas.drawOval(oval, paint);
+
+		return bitmap;
 	}
 }

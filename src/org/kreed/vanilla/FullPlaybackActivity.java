@@ -22,13 +22,11 @@
 
 package org.kreed.vanilla;
 
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Message;
 import android.text.format.DateUtils;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MenuItem;
@@ -45,12 +43,8 @@ import android.widget.TextView;
 public class FullPlaybackActivity extends PlaybackActivity
 	implements SeekBar.OnSeekBarChangeListener
 	         , View.OnLongClickListener
+	         , CoverView.Callback
 {
-	public static final int DISPLAY_INFO_OVERLAP = 0;
-	public static final int DISPLAY_INFO_BELOW = 1;
-	public static final int DISPLAY_INFO_WIDGETS = 2;
-	public static final int DISPLAY_INFO_WIDGETS_ZOOMED = 3;
-
 	private TextView mOverlayText;
 	private View mControlsBottom;
 
@@ -74,11 +68,8 @@ public class FullPlaybackActivity extends PlaybackActivity
 	private boolean mSeekBarTracking;
 	private boolean mPaused;
 
-	/**
-	 * The current display mode, which determines layout and cover render style.
-	 */
-	private int mDisplayMode;
-
+	private Action mUpAction;
+	private Action mDownAction;
 	private Action mCoverPressAction;
 	private Action mCoverLongPressAction;
 
@@ -96,37 +87,10 @@ public class FullPlaybackActivity extends PlaybackActivity
 	{
 		super.onCreate(icicle);
 
-		SharedPreferences settings = PlaybackService.getSettings(this);
-		int displayMode = Integer.parseInt(settings.getString("display_mode", "2"));
-		mDisplayMode = displayMode;
-
-		int layout = R.layout.full_playback;
-		int coverStyle;
-
-		switch (displayMode) {
-		default:
-			Log.w("VanillaMusic", "Invalid display mode given. Defaulting to overlap.");
-			// fall through
-		case DISPLAY_INFO_OVERLAP:
-			coverStyle = CoverBitmap.STYLE_OVERLAPPING_BOX;
-			break;
-		case DISPLAY_INFO_BELOW:
-			coverStyle = CoverBitmap.STYLE_INFO_BELOW;
-			break;
-		case DISPLAY_INFO_WIDGETS:
-			coverStyle = CoverBitmap.STYLE_NO_INFO;
-			layout = R.layout.full_playback_alt;
-			break;
-		case DISPLAY_INFO_WIDGETS_ZOOMED:
-			coverStyle = CoverBitmap.STYLE_NO_INFO_ZOOMED;
-			layout = R.layout.full_playback_alt;
-			break;
-		}
-
-		setContentView(layout);
+		setContentView(R.layout.full_playback);
 
 		CoverView coverView = (CoverView)findViewById(R.id.cover_view);
-		coverView.setup(mLooper, this, coverStyle);
+		coverView.setup(mLooper, this);
 		coverView.setOnClickListener(this);
 		coverView.setOnLongClickListener(this);
 		mCoverView = coverView;
@@ -140,8 +104,7 @@ public class FullPlaybackActivity extends PlaybackActivity
 		nextButton.setOnClickListener(this);
 
 		View controlsTop = findViewById(R.id.controls_top);
-		if (controlsTop != null)
-			controlsTop.setOnClickListener(this);
+		controlsTop.setOnClickListener(this);
 
 		mTitle = (TextView)findViewById(R.id.title);
 		mAlbum = (TextView)findViewById(R.id.album);
@@ -160,6 +123,7 @@ public class FullPlaybackActivity extends PlaybackActivity
 		mEndButton.setOnClickListener(this);
 		registerForContextMenu(mEndButton);
 
+		SharedPreferences settings = PlaybackService.getSettings(this);
 		setControlsVisible(settings.getBoolean("visible_controls", true));
 		setDuration(0);
 	}
@@ -170,11 +134,8 @@ public class FullPlaybackActivity extends PlaybackActivity
 		super.onStart();
 
 		SharedPreferences settings = PlaybackService.getSettings(this);
-		if (mDisplayMode != Integer.parseInt(settings.getString("display_mode", "2"))) {
-			finish();
-			startActivity(new Intent(this, FullPlaybackActivity.class));
-		}
-
+		mUpAction = Action.getAction(settings, "swipe_up_action", Action.Nothing);
+		mDownAction = Action.getAction(settings, "swipe_down_action", Action.Nothing);
 		mCoverPressAction = Action.getAction(settings, "cover_press_action", Action.ToggleControls);
 		mCoverLongPressAction = Action.getAction(settings, "cover_longpress_action", Action.PlayPause);
 	}
@@ -256,16 +217,14 @@ public class FullPlaybackActivity extends PlaybackActivity
 
 		setDuration(song == null ? 0 : song.duration);
 
-		if (mTitle != null) {
-			if (song == null) {
-				mTitle.setText(null);
-				mAlbum.setText(null);
-				mArtist.setText(null);
-			} else {
-				mTitle.setText(song.title);
-				mAlbum.setText(song.album);
-				mArtist.setText(song.artist);
-			}
+		if (song == null) {
+			mTitle.setText(null);
+			mAlbum.setText(null);
+			mArtist.setText(null);
+		} else {
+			mTitle.setText(song.title);
+			mAlbum.setText(song.album);
+			mArtist.setText(song.artist);
 		}
 
 		mCurrentSong = song;
@@ -457,5 +416,17 @@ public class FullPlaybackActivity extends PlaybackActivity
 		}
 
 		return false;
+	}
+
+	@Override
+	public void upSwipe()
+	{
+		PlaybackService.get(this).performAction(mUpAction, this);
+	}
+
+	@Override
+	public void downSwipe()
+	{
+		PlaybackService.get(this).performAction(mDownAction, this);
 	}
 }

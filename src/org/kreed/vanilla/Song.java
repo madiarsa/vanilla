@@ -31,6 +31,7 @@ import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.util.LruCache;
 import java.io.FileDescriptor;
 
 /**
@@ -85,9 +86,21 @@ public class Song implements Comparable<Song> {
 	};
 
 	/**
-	 * A cache of 8 covers.
+	 * A cache of 8 MiB of covers.
 	 */
-	private static final Cache<Bitmap> sCoverCache = new Cache<Bitmap>(8);
+	private static final LruCache<Long, Bitmap> sCoverCache = new LruCache<Long, Bitmap>(8 * 1024 * 1024) {
+		@Override
+		protected int sizeOf(Long key, Bitmap value)
+		{
+			return value.getByteCount();
+		}
+
+		@Override
+		protected void entryRemoved(boolean evicted, Long key, Bitmap oldValue, Bitmap newValue)
+		{
+			oldValue.recycle();
+		}
+	};
 
 	/**
 	 * If true, will not attempt to load any cover art in getCover()
@@ -205,14 +218,35 @@ public class Song implements Comparable<Song> {
 	}
 
 	/**
-	 * Query the album art for this song.
+	 * Returns true if this song is known to have no cover art. Returns false
+	 * if the song has cover art or the cover art has not been queried.
+	 */
+	public boolean hasNoCover()
+	{
+		return id == -1 || (flags & FLAG_NO_COVER) != 0 || mDisableCoverArt;
+	}
+
+	/**
+	 * Returns the cover for this song stored in the cache, or null if none
+	 * was found.
+	 */
+	public Bitmap getCachedCover()
+	{
+		if (hasNoCover())
+			return null;
+		return sCoverCache.get(id);
+	}
+
+	/**
+	 * Returns the cover art for this song, querying it from the MediaStore
+	 * if needed.
 	 *
 	 * @param context A context to use.
 	 * @return The album art or null if no album art could be found
 	 */
 	public Bitmap getCover(Context context)
 	{
-		if (mDisableCoverArt || id == -1 || (flags & FLAG_NO_COVER) != 0)
+		if (hasNoCover())
 			return null;
 
 		Bitmap cover = sCoverCache.get(id);
@@ -228,9 +262,6 @@ public class Song implements Comparable<Song> {
 				FileDescriptor fileDescriptor = parcelFileDescriptor.getFileDescriptor();
 				cover = BitmapFactory.decodeFileDescriptor(fileDescriptor, null, BITMAP_OPTIONS);
 				if (cover != null) {
-					Bitmap discarded = sCoverCache.discardOldest();
-					if (discarded != null)
-						discarded.recycle();
 					sCoverCache.put(id, cover);
 					return cover;
 				}

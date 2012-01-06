@@ -137,7 +137,6 @@ THE SOFTWARE.
 	<string name="pref_playback_view">Playback View</string>
 	<string name="playback_on_startup_title">Open on Startup</string>
 	<string name="playback_on_startup_summary">Open playback view on startup</string>
-	<string name="display_mode_title">Display Mode</string>
 	<string name="swipe_up_action_title">Swipe Up Action</string>
 	<string name="swipe_down_action_title">Swipe Down Action</string>
 	<string name="cover_press_action_title">Cover Tap Action</string>
@@ -175,11 +174,6 @@ THE SOFTWARE.
 
 	<!-- The following are for the list preferences -->
 	<string name="last_used_action">Last used action</string>
-
-	<string name="info_on_cover">Info on cover art</string>
-	<string name="info_below_cover">Info below cover art</string>
-	<string name="fixed_info">Info fixed at top</string>
-	<string name="fixed_info_fullscreen">Info fixed at top (fullscreen cover art)</string>
 
 	<string name="do_nothing">Do nothing</string>
 	<string name="open_library">Open library</string>
