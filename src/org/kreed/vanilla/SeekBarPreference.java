@@ -51,7 +51,11 @@ public class SeekBarPreference extends DialogPreference implements SeekBar.OnSee
 	@Override
 	public CharSequence getSummary()
 	{
-		return getSummary(mValue);
+		if ("fallback_gain".equals(getKey())) {
+			return getContext().getResources().getString(R.string.fallback_gain_summary, 20 * Math.log10(Math.pow(mValue / 100.0, 3)));
+		} else {
+			return getSummary(mValue);
+		}
 	}
 
 	@Override

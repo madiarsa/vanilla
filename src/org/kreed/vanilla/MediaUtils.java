@@ -536,4 +536,16 @@ public class MediaUtils {
 		Uri media = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
 		return new QueryTask(media, projection, selection.toString(), null, DEFAULT_SORT);
 	}
+
+	public static final float DB_MIN = -72.0f;
+
+	public static float decibelsToLinearScale(float decibels)
+	{
+		if (decibels == 0)
+			return 1.0f;
+		else if (decibels <= DB_MIN)
+			return 0.0f;
+		else
+			return (float)Math.pow(10.0f, decibels / 20.0f);
+	}
 }

@@ -113,4 +113,8 @@ THE SOFTWARE.
 		<item>@string/fixed_info</item>
 		<item>@string/fixed_info_fullscreen</item>
 	</string-array>
+	<string-array name="replaygain_type_entries">
+		<item>@string/track_gain</item>
+		<item>@string/album_gain</item>
+	</string-array>
 </resources>

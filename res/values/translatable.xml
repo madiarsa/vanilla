@@ -163,6 +163,13 @@ THE SOFTWARE.
 	<string name="shake_action_title">Shake Action</string>
 	<string name="shake_threshold_title">Shake Force Threshold</string>
 
+	<string name="pref_replaygain">ReplayGain</string>
+	<string name="enable_replaygain">Enable ReplayGain</string>
+	<string name="enable_replaygain_summary">Ensures that all songs play at a similar volume. ReplayGain data must have been written into the files.</string>
+	<string name="fallback_gain_title">Fallback Gain</string>
+	<string name="fallback_gain_summary">Songs without ReplayGain data are usually too loud. Use a %+.1f dB adjustment for such songs.</string>
+	<string name="replaygain_type_title">Gain Type</string>
+
 	<string name="pref_misc">Miscellaneous Features</string>
 	<string name="disable_lockscreen_title">Disable Lockscreen</string>
 	<string name="disable_lockscreen_summary">Prevent the lockscreen from activating when in the library or playback screen</string>
@@ -213,4 +220,7 @@ THE SOFTWARE.
 	<string name="enqueue_current_genre">Enqueue current genre</string>
 	<string name="clear_queue">Clear queue</string>
 	<string name="toggle_controls">Toggle controls</string>
+
+	<string name="track_gain">Track gain (all tracks equal loudness)</string>
+	<string name="album_gain">Album gain (albums equal loudness)</string>
 </resources>

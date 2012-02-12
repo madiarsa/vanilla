@@ -32,6 +32,7 @@ import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.util.Log;
 import java.io.FileDescriptor;
+import java.io.IOException;
 
 /**
  * Represents a Song backed by the MediaStore. Includes basic metadata and
@@ -138,6 +139,17 @@ public class Song implements Comparable<Song> {
 	 * Song flags. Currently {@link #FLAG_RANDOM} or {@link #FLAG_NO_COVER}.
 	 */
 	public int flags;
+
+	/**
+	 * ReplayGain album gain. Float.MIN_VALUE means data has not been loaded.
+	 * Float.MAX_VALUE means the file has no supported ReplayGain tags.
+	 */
+	private float mAlbumGain = Float.MIN_VALUE;
+	/**
+	 * ReplayGain track gain. Float.MIN_VALUE means data has not been loaded.
+	 * Float.MAX_VALUE means the file has no supported ReplayGain tags.
+	 */
+	private float mTrackGain = Float.MIN_VALUE;
 
 	/**
 	 * Initialize the song with the specified id. Call populate to fill fields
@@ -260,5 +272,82 @@ public class Song implements Comparable<Song> {
 		if (albumId > other.albumId)
 			return 1;
 		return -1;
+	}
+
+	/**
+	 * Retrieves the songs's ReplayGain album gain, loading it from the file
+	 * if necessary.
+	 *
+	 * @return The gain in a linear scale or Float.MAX_VALUE if no gain could
+	 * be loaded.
+	 */
+	public float albumGain()
+	{
+		if (mAlbumGain == Float.MIN_VALUE)
+			loadTags();
+		return mAlbumGain;
+	}
+
+	/**
+	 * Retrieves the songs's ReplayGain track gain, loading it from the file
+	 * if necessary.
+	 *
+	 * @return The gain in a linear scale or Float.MAX_VALUE if no gain could
+	 * be loaded.
+	 */
+	public float trackGain()
+	{
+		if (mTrackGain == Float.MIN_VALUE)
+			loadTags();
+		return mTrackGain;
+	}
+
+	/**
+	 * Load the tags from the file.
+	 */
+	private void loadTags()
+	{
+		mAlbumGain = Float.MAX_VALUE;
+		mTrackGain = Float.MAX_VALUE;
+
+		try {
+			ID3Reader.readID3(this);
+		} catch (IOException e) {
+			Log.d("VanillaMusic", "Failed to load tags", e);
+		}
+	}
+
+	/**
+	 * Callback for ID3Reader. Processes a TXXX tag with the given data.
+	 */
+	public void processTag(String description, String value)
+	{
+		Log.d("VanillaMusic", "process  tag: " + description + " " + value);
+		if ("replaygain_track_gain".equals(description))
+			mTrackGain = parseReplayGainDbValue(value);
+		else if ("replaygain_album_gain".equals(description))
+			mAlbumGain = parseReplayGainDbValue(value);
+	}
+
+	/**
+	 * Parse the given ReplayGain tag.
+	 *
+	 * @param text The tag, in format x.xxxx dB.
+	 * @return The linear scale of the gain, or Float.MAX_VALUE if no gain was
+	 * found.
+	 */
+	private static float parseReplayGainDbValue(String text)
+	{
+		int dbIndex = text.toLowerCase().indexOf("db");
+		if (dbIndex == -1)
+			return Float.MAX_VALUE;
+
+		try {
+			float decibels = Float.parseFloat(text.substring(0, dbIndex - 1));
+			return MediaUtils.decibelsToLinearScale(decibels);
+		} catch (NumberFormatException e) {
+			Log.d("VanillaMusic", "Failed to parse replaygain db value: " + text, e);
+			return Float.MAX_VALUE;
+		}
 	}
 }

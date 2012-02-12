@@ -148,6 +148,27 @@ THE SOFTWARE.
 			android:defaultValue="80"
 			android:dependency="enable_shake" />
 	</PreferenceCategory>
+	<PreferenceCategory android:title="@string/pref_replaygain">
+		<CheckBoxPreference
+			android:title="@string/enable_replaygain"
+			android:key="enable_replaygain"
+			android:summary="@string/enable_replaygain_summary"
+			android:defaultValue="false" />
+		<org.kreed.vanilla.SeekBarPreference
+			android:dependency="enable_replaygain"
+			android:key="fallback_gain"
+			android:negativeButtonText="@null"
+			android:dialogLayout="@layout/shake_pref"
+			android:defaultValue="68"
+			android:title="@string/fallback_gain_title" />
+		<org.kreed.vanilla.ListPreferenceSummary
+			android:dependency="enable_replaygain"
+			android:key="replaygain_type"
+			android:title="@string/replaygain_type_title"
+			android:entries="@array/replaygain_type_entries"
+			android:entryValues="@array/entry_values"
+			android:defaultValue="0" />
+	</PreferenceCategory>
 	<PreferenceCategory android:title="@string/pref_misc">
 		<CheckBoxPreference
 			android:key="disable_lockscreen"
